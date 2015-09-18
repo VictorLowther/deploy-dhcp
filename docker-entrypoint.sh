@@ -34,12 +34,13 @@ service ssh start
 # This could error if this is the first time.  Ignore it
 #set +e
 # Node id is harcoded here, and that is a Bad Thing
-if blob="$(rebar deployments get 1 attrib rebar-access_keys)"; then
-  mkdir -p /root/.ssh
-  touch /root/.ssh/authorized_keys
-  awk -F\" '{ print $4 }' <<<"$blob" >> /root/.ssh/authorized_keys
-  chmod 700 /root/.ssh/authorized_keys
-fi
+mkdir -p /root/.ssh
+touch /root/.ssh/authorized_keys
+chmod 600 /root/.ssh/authorized_keys
+while read line; do
+    fgrep -q "$line" "/root/.ssh/authorized_keys" && continue
+    echo "$line" >> "/root/.ssh/authorized_keys"
+done < <(rebar deployments get 1 attrib rebar-access_keys |jq -r -c '.value | .[]')
 
 #set -e
 ip_re='([0-9a-f.:]+/[0-9]+)'
